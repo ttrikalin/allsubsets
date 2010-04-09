@@ -1,4 +1,7 @@
 program define allsubsets
+
+*! version 0.1
+
 version 8
 
 syntax varlist(numeric min=2 max=2) [in] [if] , save(string) [replace]
@@ -19,6 +22,11 @@ syntax varlist(numeric min=2 max=2) [in] [if] , save(string) [replace]
 
 	if (`nStudies' >20) {
 		noi di as error "Too many possible subsets (`nSubsets')"
+		exit -1
+	}
+
+	if (`nStudies' ==0 ) {
+		noi di as error "No studies selected"
 		exit -1
 	}
 
@@ -48,4 +56,9 @@ syntax varlist(numeric min=2 max=2) [in] [if] , save(string) [replace]
 	restore 
 end
 
-program define allsubsetsmeta, plugin
+if ("`c(os)'" == "Windows") {
+	program define allsubsetsmeta, plugin using(allsubsetsmeta_win.plugin)
+}
+if ("`c(os)'" == "MasOSX") {
+	program define allsubsetsmeta, plugin using(allsubsetsmeta_osx.plugin)
+}
