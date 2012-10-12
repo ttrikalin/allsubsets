@@ -26,7 +26,7 @@ Then:
 
 gcc -bundle -DSYSTEM=APPLEMAC  -I. -I/sw/include -L/sw/lib stplugin.c allSubsetsMeta.c -o allsubsetsmeta_osx.plugin -lm -lgsl -lgslcblas
 
-and the C plugin is ready.
+and the C plugin is ready. [Change the -I flags appropriately to point to the GSL library in your system.]
 
 /* Windowz -- through Cygwin gcc */
 
