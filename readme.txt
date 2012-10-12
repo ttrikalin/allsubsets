@@ -6,6 +6,8 @@
 
 -- On Windows, the plugin (allsubsetsmeta_win.plugin) works on 32 bit XP (home something or other) and 32 bit Windows 7. I do not have a 64 bit machine, so dunno whether it works there. 
 
+-- I did not compile a *nix plugin. I doubt Unix users would need a binary.  
+
 -- If the binaries do not work for you, then do try compile from source before shooting me an email (thomas_trikalinos [at] REMOVETRASHCAPS brown [dot] edu).  
 Compiling should be easy -- the only dependency is the (open source and free) GNU Scientific Library (GSL) -- just because I got lazy and used a couple of functions from there.  
 
@@ -30,7 +32,7 @@ and the C plugin is ready.
 
 gcc -shared -mno-cygwin stplugin.c allSubsetsMeta.c -o allsubsetsmeta_win.plugin -lm -lgsl -lgslcblas
 
- 
+
 
 
 
