@@ -12,10 +12,10 @@
 Compiling should be easy -- the only dependency is the (open source and free) GNU Scientific Library (GSL) -- just because I got lazy and used a couple of functions from there.  
 
 -- To install: 
-Put allsubsets.ado, allsubsetsmeta_[win|osx].plugin, and allsubsets.hlp somewhere in the Stata path (for more info, from within Stata _help adopath_). 
+Put allsubsets.ado, allsubsetsmeta_[win|osx].plugin, and allsubsets.hlp somewhere on the Stata path (for more info, from within Stata _help adopath_). 
 
-
-
+-- To test: 
+Save test.do and data.txt on the Stata path; run test.do.
 
 
 take care, 
