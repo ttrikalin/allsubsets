@@ -8,9 +8,14 @@
 
 #define c(i) (gsl_combination_get(comb, (i)))
 #define MARES(i) (gsl_vector_get(metaResultsVector, (i)))
+
+/* 10/15/2012 Silly trick to export symbol in MS compiler 
+   (Windowz VS 2008 C/C++)*/
+
 #if _MSC_VER
 #define snprintf _snprintf 
 #endif 
+
 
 /* The plugin should be called with the number of studies in the meta as 1st arg*/
 
