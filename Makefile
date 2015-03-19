@@ -1,8 +1,8 @@
 objects = allSubsetsMeta.o stplugin.o
 
-allSubsetsMeta.plugin : $(objects) 
+allSubsetsMeta_osx.plugin : $(objects) 
 	gcc  -bundle -L/sw/lib -lm -lgsl -lgslcblas \
-		-o allSubsetsMeta.plugin $(objects) 
+		-o allSubsetsMeta_osx.plugin $(objects) 
 
 stplugin.o : stplugin.c stplugin.h
 	gcc -c stplugin.c -I. -I/sw/include \

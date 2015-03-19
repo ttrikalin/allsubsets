@@ -5,6 +5,7 @@
 #include <gsl/gsl_combination.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_math.h>
+#include <gsl/gsl_sf.h>
 
 #define c(i) (gsl_combination_get(comb, (i)))
 #define MARES(i) (gsl_vector_get(metaResultsVector, (i)))
@@ -17,10 +18,14 @@
 #endif 
 
 
-/* The plugin should be called with the number of studies in the meta as 1st arg*/
+/* The plugin should be called with 
+		the number of studies in the meta as 1st arg
+   		the from as the second arguments 
+   		the to as the third argument 
+*/
 
 int AllSubsetsMetaAnalysis(gsl_vector * esVector, gsl_vector * varVector, 
-	gsl_vector * metaResultsVector);
+	gsl_vector * metaResultsVector, ST_uint4 from, ST_uint4 to);
 
 int MetaAnalysis(gsl_vector * esVector, gsl_vector * varVector, 
 	gsl_vector * metaResultsVector, gsl_combination * comb);
@@ -38,14 +43,15 @@ char *strrev(char *str);
 */
 
 STDLL stata_call(int argc, char *argv[]) {
-	ST_uint4	j;
+	ST_uint4	j, i, from, to;
 	ST_uint4 	n;
 	ST_long 	nSubsets;
 	ST_uint4 	nOutputVars=9; /* ES_F, varES_F, es_R, varES_R, df, Q, I2, tau2 subsetString */
 	ST_uint4 	nInputVars=2;  /* ES, var*/
 	ST_double	z, es, var;
 	ST_retcode	rc;
-	ST_double 	version = 0.1;	
+	//ST_double 	version = 0.1;	
+	ST_double 	version = 0.2;	
 	
 	char	buf[80];
 	
@@ -53,20 +59,40 @@ STDLL stata_call(int argc, char *argv[]) {
 	gsl_vector * varVector;
 	gsl_vector * metaResultsVector;
 	
-	if (argc != 1) {
+	//if (argc != 1) {
+	if (argc != 3) {
 		snprintf(buf, 80, "Plugin (ver: %g) usage: c_meta nStudies\n", version);
 		SF_error(buf);
 		SF_error("Please debug the calling .ado file!!!\n");
 		return (-1);
 	}
 	n = (ST_uint4) atoi(argv[0]);
+	from = (ST_uint4) atoi(argv[1]);   /* added modification */
+	to = (ST_uint4) atoi(argv[2]);     /* added modification */
+
+/*
+	// debugging by printing out arguments   
+	for (i=0; i< argc; i++) {
+    	snprintf(buf, 80, "\narg%d=%s", i, argv[i]);
+    	SF_error(buf);
+ 	}
+	snprintf(buf, 80, "\nfrom=%d\nto=%d", from, to);
+    SF_error(buf);
+*/
+
 	esVector = gsl_vector_alloc(n);
 	varVector = gsl_vector_alloc(n);
 
 	/* This will hold the meta-analysis results */
 	metaResultsVector = gsl_vector_alloc(nOutputVars-1);  /* last var is string */
 	
-	nSubsets = gsl_pow_int(2,n)-1;
+	/*nSubsets = gsl_pow_int(2,n)-1;*/
+	nSubsets = 0;
+	for(i=from;i<=to;i++) {
+		nSubsets = nSubsets + gsl_sf_choose(n, i);
+	}
+
+
 	if (SF_in2()<nSubsets) {
 		snprintf(buf, 80, "Plugin needs %ld observations in dataset\n", nSubsets);
 		SF_error(buf);
@@ -84,9 +110,9 @@ STDLL stata_call(int argc, char *argv[]) {
     
 	for(j=SF_in1(); j<= n ; j++) {
 		if (SF_ifobs(j)) {
-			if(rc=SF_vdata(1,j,&z)) return(rc);
+			if((rc=SF_vdata(1,j,&z))) return(rc);
 			es = z;
-			if(rc=SF_vdata(2,j,&z)) return(rc);
+			if((rc=SF_vdata(2,j,&z))) return(rc);
 			var = z;
 			if(SF_is_missing(es) | SF_is_missing(var)) {
 				snprintf(buf, 80,"You have passed missing values (obs # %d) in the C plugin!\n", j);
@@ -102,7 +128,7 @@ STDLL stata_call(int argc, char *argv[]) {
 		}
 	}
 
-	if (rc=AllSubsetsMetaAnalysis(esVector, varVector, metaResultsVector)) return(rc); 
+	if ((rc=AllSubsetsMetaAnalysis(esVector, varVector, metaResultsVector, from, to))) return(rc); 
 
 	gsl_vector_free(esVector);
 	gsl_vector_free(varVector);
@@ -112,7 +138,7 @@ STDLL stata_call(int argc, char *argv[]) {
 }
 
 int AllSubsetsMetaAnalysis(gsl_vector * esVector, gsl_vector * varVector,
-	gsl_vector * metaResultsVector) {
+	gsl_vector * metaResultsVector, ST_uint4 from, ST_uint4 to ) {
 	ST_retcode	rc;
 	ST_uint4 	i, nStudies;
 	ST_long		j, nSubsets;
@@ -125,8 +151,8 @@ int AllSubsetsMetaAnalysis(gsl_vector * esVector, gsl_vector * varVector,
 
 
 	j=1;
-	for(i=1; i <= nStudies; i++) { 
-		
+	//for(i=1; i <= nStudies; i++) { 
+	for(i=from; i <= to; i++) {
 		comb = 	gsl_combination_calloc(nStudies, i);
 		
 		do { 
@@ -136,8 +162,8 @@ int AllSubsetsMetaAnalysis(gsl_vector * esVector, gsl_vector * varVector,
 				SF_error("Exceeded the maximum number of subsets!!!\n");
 				return(-2);
 			}
-			if (rc = MetaAnalysis(esVector, varVector, metaResultsVector, comb) ) return(rc);
-			if (rc = WriteOut(metaResultsVector, j, comb) ) return(rc);
+			if ((rc = MetaAnalysis(esVector, varVector, metaResultsVector, comb) )) return(rc);
+			if ((rc = WriteOut(metaResultsVector, j, comb) )) return(rc);
 			j += 1;
 		} while (gsl_combination_next(comb) == GSL_SUCCESS);
 	}
@@ -193,8 +219,8 @@ int MetaAnalysis(gsl_vector * esVector, gsl_vector * varVector,
 	
 		/****REM****/
 		/* sets ES_REM var_REM and tau2 */
-		if (rc = DL(esVector, varVector, metaResultsVector, comb,
-			sumOfFixedWeights, sumOfFixedWeights2) ) return(rc);
+		if ((rc = DL(esVector, varVector, metaResultsVector, comb,
+			sumOfFixedWeights, sumOfFixedWeights2) )) return(rc);
 	}
 	else {
 		gsl_vector_set(metaResultsVector, 2, MARES(0));
@@ -260,20 +286,20 @@ int WriteOut(gsl_vector * metaResultsVector, ST_long j, gsl_combination * comb) 
 	char 		digits[52]="abcdefghijklmnopqrstuvwxywABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	char 		buf[80] ,temp[80];
 	
-	if(rc = SF_vstore(3, j, MARES(0))) return(rc);  /* ES_FEM */
-	if(rc = SF_vstore(4, j, MARES(1))) return(rc);  /* var_FEM */
-	if(rc = SF_vstore(5, j, MARES(2))) return(rc);  /* ES_REM */
-	if(rc = SF_vstore(6, j, MARES(3))) return(rc);  /* var_REM */
-	if(rc = SF_vstore(7, j, MARES(4))) return(rc);  /* df */
+	if((rc = SF_vstore(3, j, MARES(0)))) return(rc);  /* ES_FEM */
+	if((rc = SF_vstore(4, j, MARES(1)))) return(rc);  /* var_FEM */
+	if((rc = SF_vstore(5, j, MARES(2)))) return(rc);  /* ES_REM */
+	if((rc = SF_vstore(6, j, MARES(3)))) return(rc);  /* var_REM */
+	if((rc = SF_vstore(7, j, MARES(4)))) return(rc);  /* df */
 	if (MARES(4) > 0.0) {
-		if(rc = SF_vstore(8, j, MARES(5))) return(rc);  /* Q */
-		if(rc = SF_vstore(9, j, MARES(6))) return(rc);  /* I2 */
+		if((rc = SF_vstore(8, j, MARES(5)))) return(rc);  /* Q */
+		if((rc = SF_vstore(9, j, MARES(6)))) return(rc);  /* I2 */
 	}
 	else {
-		if(rc = SF_vstore(8, j, SV_missval )) return(rc);  /* Q */
-		if(rc = SF_vstore(9, j, SV_missval )) return(rc);  /* I2 */
+		if((rc = SF_vstore(8, j, SV_missval ))) return(rc);  /* Q */
+		if((rc = SF_vstore(9, j, SV_missval ))) return(rc);  /* I2 */
 	}
-	if(rc = SF_vstore(10, j, MARES(7))) return(rc);  /* tau2 */
+	if((rc = SF_vstore(10, j, MARES(7)))) return(rc);  /* tau2 */
 	
 	if (subsetLength>80) {
 		SF_error("Exceeded 80 characters for subset description");
@@ -288,7 +314,7 @@ int WriteOut(gsl_vector * metaResultsVector, ST_long j, gsl_combination * comb) 
 		}
 	}
 	
-	if(rc = SF_sstore(11, j, buf)) return(rc);  
+	if((rc = SF_sstore(11, j, buf))) return(rc);  
 
 
 	return 0;
