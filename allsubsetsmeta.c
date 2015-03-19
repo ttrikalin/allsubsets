@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <stplugin.h>
+#include "stplugin.h"
 #include <string.h>
 
 #include <gsl/gsl_combination.h>
@@ -8,7 +8,9 @@
 
 #define c(i) (gsl_combination_get(comb, (i)))
 #define MARES(i) (gsl_vector_get(metaResultsVector, (i)))
-
+#if _MSC_VER
+#define snprintf _snprintf 
+#endif 
 
 /* The plugin should be called with the number of studies in the meta as 1st arg*/
 

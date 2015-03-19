@@ -30,7 +30,7 @@ and the C plugin is ready. [Change the -I flags appropriately to point to the GS
 
 /* Windowz -- through Cygwin gcc */
 
-gcc -shared -mno-cygwin stplugin.c allSubsetsMeta.c -o allsubsetsmeta_win.plugin -lm -lgsl -lgslcblas
+gcc -shared -I. stplugin.c allSubsetsMeta.c -o allsubsetsmeta_win.plugin -lm -lgsl -lgslcblas
 
 
 
